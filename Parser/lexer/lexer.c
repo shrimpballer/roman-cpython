@@ -930,6 +930,39 @@ tok_get_normal_mode(struct tok_state *tok, tokenizer_mode* current_tok, struct t
                     return MAKE_TOKEN(ERRORTOKEN);
                 }
             }
+            else if (c == 'r' || c == 'R') {
+                /* Roman numeral literal: 0r<ROMAN> where <ROMAN> is [IVXLCDM]+ */
+                c = tok_nextc(tok);
+                int saw_letter = 0;
+                int last_was_underscore = 0;
+                for (;;) {
+                    if (c == '_') {
+                        if (!saw_letter) {
+                            tok_backup(tok, c);
+                            return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "invalid roman literal"));
+                        }
+                        last_was_underscore = 1;
+                        c = tok_nextc(tok);
+                        continue;
+                    }
+                    /* Accept roman letters only (case-insensitive) */
+                    int up = Py_TOUPPER(c);
+                    if (up == 'I' || up == 'V' || up == 'X' || up == 'L' || up == 'C' || up == 'D' || up == 'M') {
+                        saw_letter = 1;
+                        last_was_underscore = 0;
+                        c = tok_nextc(tok);
+                        continue;
+                    }
+                    break;
+                }
+                if (!saw_letter || last_was_underscore) {
+                    tok_backup(tok, c);
+                    return MAKE_TOKEN(_PyTokenizer_syntaxerror(tok, "invalid roman literal"));
+                }
+                if (!verify_end_of_number(tok, c, "roman")) {
+                    return MAKE_TOKEN(ERRORTOKEN);
+                }
+            }
             else {
                 int nonzero = 0;
                 /* maybe old-style octal; c is first char of it */
