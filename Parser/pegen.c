@@ -622,6 +622,56 @@ parsenumber_raw(const char *s)
 
     assert(s != NULL);
     errno = 0;
+    /* Support roman literal syntax: 0r<ROMAN> */
+    if (s[0] == '0' && (s[1] == 'r' || s[1] == 'R')) {
+        const char *p = s + 2;
+        if (*p == '\0') {
+            PyErr_SetString(PyExc_ValueError, "invalid roman literal");
+            return NULL;
+        }
+        unsigned long long total = 0;
+        while (*p) {
+            if (*p == '_') { p++; continue; }
+            int v;
+            int up = (unsigned char)Py_TOUPPER(*p);
+            switch (up) {
+                case 'I': v = 1; break;
+                case 'V': v = 5; break;
+                case 'X': v = 10; break;
+                case 'L': v = 50; break;
+                case 'C': v = 100; break;
+                case 'D': v = 500; break;
+                case 'M': v = 1000; break;
+                default:
+                    PyErr_SetString(PyExc_ValueError, "invalid roman literal");
+                    return NULL;
+            }
+            /* lookahead to see if subtractive */
+            const char *q = p + 1;
+            while (*q == '_') q++;
+            int next_v = 0;
+            if (*q) {
+                int up2 = (unsigned char)Py_TOUPPER(*q);
+                switch (up2) {
+                    case 'I': next_v = 1; break;
+                    case 'V': next_v = 5; break;
+                    case 'X': next_v = 10; break;
+                    case 'L': next_v = 50; break;
+                    case 'C': next_v = 100; break;
+                    case 'D': next_v = 500; break;
+                    case 'M': next_v = 1000; break;
+                    default: next_v = 0; break;
+                }
+            }
+            if (next_v > v) {
+                total -= (unsigned long long)v;
+            } else {
+                total += (unsigned long long)v;
+            }
+            p++;
+        }
+        return PyLong_FromUnsignedLongLong(total);
+    }
     end = s + strlen(s) - 1;
     imflag = *end == 'j' || *end == 'J';
     if (s[0] == '0') {
