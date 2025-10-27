@@ -1,6 +1,7 @@
-This is Python version 3.15.0 alpha 1
+This is Python version 3.15.0 alpha 1 with added Roman numerals
 =====================================
-
+Roman numeral format is ``0r<numeral>`` (like ``0rXIV`` or ``0rxiv``)
+=====================================
 .. image:: https://github.com/python/cpython/actions/workflows/build.yml/badge.svg?branch=main&event=push
    :alt: CPython build status on GitHub Actions
    :target: https://github.com/python/cpython/actions
